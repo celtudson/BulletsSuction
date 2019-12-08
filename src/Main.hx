@@ -1,9 +1,15 @@
 package;
 
+import kha.CompilerDefines;
+#if kha_html5
+import js.html.CanvasElement;
+import js.Browser.document;
+#end
+import kha.System;
 import kha.Assets;
+import kha.Font;
 import kha.Framebuffer;
 import kha.Scheduler;
-import kha.System;
 import kha.input.Mouse;
 
 typedef Vec2 = {
@@ -21,27 +27,38 @@ typedef Body = {
 
 class Main {
 
+	static var font: Font;
 	static final center: Vec2 = {x: 320, y: 240};
 	static var target: Body;
 	static var bullets: Array<Body> = [];
 
-	static function onRestart(): Void {
-		target = {
-			angle: 0,
-			speed: 0.002,
-			remote: 160,
-			targetPos: {x: 0, y: 0},
-			pos: {x: 0, y: 0}
-		};
-		bullets = [];
-	}
-
 	public static function main() {
 		System.start({title: "BulletsSuction", width: 640, height: 480}, function (_) {
-			Scheduler.addTimeTask(onUpdate, 0, 1 / 60);
-			System.notifyOnFrames(onRender);
-			Mouse.get().notify(onMouseDown, null, null, null);
-			onRestart();
+			#if kha_html5
+			document.documentElement.style.padding = "0";
+			document.documentElement.style.margin = "0";
+			document.body.style.padding = "0";
+			document.body.style.margin = "0";
+			var canvas:CanvasElement = cast document.getElementById(CompilerDefines.canvas_id);
+			canvas.width = 640;
+			canvas.height = 480;
+			#end
+			Assets.loadEverything(
+				function() {
+					font = Assets.fonts.pixcyr2;
+					Scheduler.addTimeTask(onUpdate, 0, 1 / 60);
+					System.notifyOnFrames(onRender);
+					Mouse.get().notify(onMouseDown, null, null, null);
+
+					target = {
+						angle: 0,
+						speed: 0.002,
+						remote: 160,
+						targetPos: {x: 0, y: 0},
+						pos: {x: 0, y: 0}
+					};
+				}
+			);
 		});
 	}
 
@@ -54,7 +71,7 @@ class Main {
 				targetPos: {x: 0, y: 0},
 				pos: {x: x, y: y}
 			});
-		else onRestart();
+		else bullets.resize(0);
 	}
 
 	static function getTargetPos(angle: Float): Vec2 {
@@ -94,13 +111,20 @@ class Main {
 	static function onRender(framebuffers: Array<Framebuffer>): Void {
 		final g = framebuffers[0].g2;
 		g.begin();
-		g.color = 0xFFFFFFFF;
+		g.font = font;
+		g.fontSize = 16;
 
-		g.fillRect(target.pos.x - 2, target.pos.y - 2, 4, 4);
-		for (bullet in bullets)
-			g.fillRect(bullet.pos.x - 2, bullet.pos.y - 2, 4, 4);
+		g.color = 0xFFFFFFFF;
 		for (bullet in bullets)
 			g.drawLine(bullet.pos.x, bullet.pos.y, bullet.targetPos.x, bullet.targetPos.y);
+		g.color = 0xFFFFD700;
+		g.fillRect(target.pos.x - 2, target.pos.y - 2, 4, 4);
+		g.color = 0xFFFF0000;
+		for (bullet in bullets)
+			g.fillRect(bullet.pos.x - 2, bullet.pos.y - 2, 4, 4);
+
+		g.color = 0xFFFFFFFF;
+		g.drawString("LMB - spawn, RMB - delete all", 4, 2);
 
 		g.end();
 	}
