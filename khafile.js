@@ -8,4 +8,5 @@ project.addSources('src');
 project.addShaders('src/shaders/**');
 project.addParameter('-dce full'); 
 project.addParameter('-D analyzer-optimize');
+project.targetOptions.html5.disableContextMenu = true;
 resolve(project);
